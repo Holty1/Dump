@@ -1,0 +1,12 @@
+LogWindow.ui
+GeneratedFiles/Debug/moc_LogWindow.cpp
+GeneratedFiles/Debug/moc_MainForm.cpp
+GeneratedFiles/Debug/moc_SnifferForm.cpp
+GeneratedFiles/Release/moc_MainForm.cpp
+GeneratedFiles/Release/moc_SnifferForm.cpp
+GeneratedFiles/qrc_MainForm.cpp
+GeneratedFiles/ui_LogWindow.h
+GeneratedFiles/ui_MainForm.h
+GeneratedFiles/ui_SnifferForm.h
+LogWindow.cpp
+LogWindow.h

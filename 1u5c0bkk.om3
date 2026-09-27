@@ -1,0 +1,163 @@
+#include "stdafx.h"
+#include "Hooks.h"
+
+void _fastcall Hooks::NewCPythonApplicationRenderGame(void*This, void* EDX)
+{
+
+
+	if (!Settings::PerformanceDisableRender)
+	{
+		return nCPythonApplicationRenderGame(This);
+	}
+	else
+	{
+		return;
+	}
+
+}
+
+
+void _fastcall Hooks::NewCInstanceBaseBlockMovement(void*This, void* EDX)
+{
+
+	if (!Settings::MiniMHWALL)
+	{
+		return nCInstanceBaseBlockMovement(This);
+	}
+	else
+	{
+		return ;
+	}
+}
+//##################################################################################################
+bool _fastcall Hooks::NewCInstanceBaseCheckAdvancing(void*This, void* EDX)
+{
+	if (!Settings::MiniMHWALL)
+	{
+		return nCInstanceBaseCheckAdvancing(This);
+	}
+	else
+	{
+		return true;
+	}
+}
+//##################################################################################################
+void _fastcall Hooks::NewCPhysicsObjectIncreaseExternalForce(void*This, void* EDX, const D3DVECTOR & c_rvBasePosition, float fForce)
+{
+	if (!Settings::MiniMHNOK)
+	{
+		nCPhysicsObjectIncreaseExternalForce(This, c_rvBasePosition, fForce);
+	}
+	return;
+}
+
+//##################################################################################################
+void _fastcall Hooks::NewCPythonItemCreateItem(void* This, void* EDX, DWORD dwVirtualID, DWORD dwVirtualNumber, float x, float y, float z, bool bDrop)
+{
+
+	QMetaObject::invokeMethod(Globals::mainform, "AppendFishBotLog", Q_ARG(QString, to_string(dwVirtualID).c_str()));
+	nCPythonItemCreateItem(This, dwVirtualID, dwVirtualNumber, x, y, z, bDrop);
+}
+
+bool _fastcall Hooks::NewCNetworkStreamRecv(void*This, void* EDX, int len, void* pDestBuf)
+{
+	bool ret = nCNetworkStreamRecv(This, len, pDestBuf);
+	BYTE * destBuf = (BYTE *)pDestBuf;
+	
+	byte header;
+	memcpy(&header, destBuf, sizeof(header));
+	if (header == HEADER_GC_LOGIN_SUCCESS3 && len == 1)
+	{
+		return ret;
+	}
+	if (header == HEADER_GC_ITEM_GROUND_ADD && len == 21)
+	{
+		/*TPacketGCItemGroundAdd packet_item_ground_add;
+		memcpy(&packet_item_ground_add, destBuf, sizeof(packet_item_ground_add));*/
+		
+	}
+#ifdef ESGAROTH
+	if (header == HEADER_GC_FISHING && len == sizeof(TPacketGCFishing))
+	{
+		TPacketGCFishing packetGCFishing;
+		
+			memcpy(&packetGCFishing, destBuf, sizeof(TPacketGCFishing)); 
+			if (packetGCFishing.subheader == 2 && packetGCFishing.info == GameFunctions::PlayerGetMainCharacterIndex())
+			{
+	
+				FishBot::AppendCastDirect(packetGCFishing.count);
+
+			}
+		
+	}
+#endif
+#ifdef PANGEA
+
+
+#endif
+	PacketSniffer::ProcessRecvPacket(len, pDestBuf);
+
+
+
+	return ret;
+}
+bool _fastcall Hooks::NewCNetworkStreamSend(void*This, void* EDX, int len, void* pDestBuf)
+{
+	bool ret = nCNetworkStreamSend(This, len, pDestBuf);
+	BYTE * destBuf = (BYTE *)pDestBuf;
+
+	byte header;
+	memcpy(&header, destBuf, sizeof(header));
+	
+
+	PacketSniffer::ProcessSendPacket(len, pDestBuf);
+
+
+
+	return ret;
+}
+static int pass = -1;
+void _fastcall Hooks::NewCPythonChatAppendChat(void*This, void* EDX, int iType, const char * c_szChat)
+{
+
+	if (iType == CHAT_TYPE_TALKING)
+	{
+
+
+		if (Settings::AlertShowTalkBalloon)
+		{
+			string title = StringExtension::StringFormat("Ogólny u:%s", GameFunctionsCustom::GetNameString());
+			Misc::UpdateBalloon(Globals::mainHwnd, StringExtension::GetLPWSTR(title.c_str()), StringExtension::GetLPWSTR(c_szChat), NULL);
+		}
+
+		if (Settings::AlertPlayTalkBeep)
+		{
+
+			PlaySound(L"SystemAsterisk", NULL, SND_SYNC);
+
+
+		}
+
+		if (Settings::AlertFlashTalkIcon)
+		{
+			FLASHWINFO fi;
+			fi.cbSize = sizeof(FLASHWINFO);
+			fi.hwnd = Globals::mainHwnd;
+			fi.dwFlags = FLASHW_ALL;
+			fi.uCount = 3;
+			fi.dwTimeout = 0;
+			FlashWindowEx(&fi);
+
+
+		}
+	}
+
+	FishBot::ParseMessage(c_szChat);
+	nCPythonChatAppendChat(This, iType, c_szChat);
+}
+
+bool _fastcall Hooks::NewCPythonNetworkStreamSendChatPacket(void*This, void* EDX, const char * c_szChat, BYTE byType)
+{
+	QMetaObject::invokeMethod(Globals::mainform, "AppendFishBotLog", Q_ARG(QString, c_szChat));
+	
+	return nCPythonNetworkStreamSendChatPacket(This, c_szChat, byTy
